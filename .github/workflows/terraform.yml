@@ -1,0 +1,49 @@
+name: Provision EC2 and VPC
+
+on:
+  workflow_dispatch:
+    inputs:
+      ec2_name:
+        description: 'EC2 Instance Name'
+        required: true
+        default: 'ExampleVM'
+        type: string
+      vpc_name:
+        description: 'VPC Name'
+        required: true
+        default: 'prod-vpc'
+        type: string
+
+jobs:
+  provision-infra:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.TF_USER_AWS_KEY }}
+          aws-secret-access-key: ${{ secrets.TF_USER_AWS_SECRET }}
+          aws-region: us-east-2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.4
+
+      - name: Terraform Apply
+        run: |
+          cd tf-example/
+          terraform init
+          terraform validate
+          terraform plan -var="ec2_name=${{ github.event.inputs.ec2_name }}" \
+                         -var="vpc_name=${{ github.event.inputs.vpc_name }}" \
+                         -var="key_name=${{ secrets.TF_VAR_KEY_NAME }}"
+          terraform apply -auto-approve \
+                         -var="ec2_name=${{ github.event.inputs.ec2_name }}" \
+                         -var="vpc_name=${{ github.event.inputs.vpc_name }}" \
+                         -var="key_name=${{ secrets.TF_VAR_KEY_NAME }}"
