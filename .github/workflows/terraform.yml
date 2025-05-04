@@ -6,7 +6,7 @@ on:
       ec2_name:
         description: 'EC2 Instance Name'
         required: true
-        default: 'ExampleVM'
+        default: 'Devops-techstack'
         type: string
       vpc_name:
         description: 'VPC Name'
@@ -35,15 +35,26 @@ jobs:
         with:
           terraform_version: 1.7.4
 
-      - name: Terraform Apply
+      - name: Terraform Init
         run: |
           cd tf-example/
           terraform init
+
+      - name: Terraform Validate
+        run: |
+          cd tf-example/
           terraform validate
-          terraform plan -var="ec2_name=${{ github.event.inputs.ec2_name }}" \
-                         -var="vpc_name=${{ github.event.inputs.vpc_name }}" \
-                         -var="key_name=${{ secrets.TF_VAR_KEY_NAME }}"
+
+      - name: Terraform Plan
+        run: |
+          cd tf-example/
+          terraform plan \
+            -var="ec2_name=${{ github.event.inputs.ec2_name }}" \
+            -var="vpc_name=${{ github.event.inputs.vpc_name }}"
+
+      - name: Terraform Apply
+        run: |
+          cd tf-example/
           terraform apply -auto-approve \
-                         -var="ec2_name=${{ github.event.inputs.ec2_name }}" \
-                         -var="vpc_name=${{ github.event.inputs.vpc_name }}" \
-                         -var="key_name=${{ secrets.TF_VAR_KEY_NAME }}"
+            -var="ec2_name=${{ github.event.inputs.ec2_name }}" \
+            -var="vpc_name=${{ github.event.inputs.vpc_name }}"
